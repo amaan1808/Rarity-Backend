@@ -1,0 +1,54 @@
+<html>
+  <head>    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+    <link rel='stylesheet' href='/stylesheets/style.css?1' />
+  </head>
+  <title>Mirage Collections</title>
+  <body class="bg-white">
+    <div style="min-height: 100%; max-width: 100%;">
+        <div class="mb-4">
+            <h1 style="text-align:center; color:blue">Mirage Collections</h1>
+            <nav class="navbar navbar-expand-lg navbar-light;" style="background-color: #e3f2fd;">
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item active">
+                        <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Features</a>
+                    </li>
+                </ul>
+            </div>
+            </nav>
+        </div>
+        <div class="row container-fluid" style="max-width:100%;margin:auto">
+            <% collections.forEach((collection)=>{   %>
+                <div class="col-lg-4 col-md-4 col-sm-6 col-xs-6" style="display:flex; margin-bottom:2%;">
+                    <a href="<%= collection.link %>">
+                        <div style="border: solid black; display:inline-block; margin:auto; text-align:center">
+                            <img src="https://files.realpython.com/media/random_data_watermark.576078a4008d.jpg" alt="random image" style="width:100%; height:50%;object-fit:scale-down ">
+                            <h3><%= collection.name %></h3>
+                            <p style="width:50ch"><%= collection.content %> </p>
+                        </div>
+                    </a>
+                </div>
+            <% }) %>
+        </div> 
+        <div style="text-align:center">
+            <form action="/add" enctype="multipart/form-data" method="post">
+                <div class="mb-3">
+                    <label >Upload collection in JSON</label>
+                    <input type="file" name="collection" accept=".json" required>
+                </div>
+                <div class="mb-3">
+                    <label >Upload config for collection in JSON</label>
+                    <input type="file" name="config" accept=".js" required>
+                </div>
+                <div>
+                    <input type="Submit">
+                </div>
+            </form> 
+        </div>
+    </div>    
+</body>
+</html>

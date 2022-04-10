@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en" class="h-100">
+  <head>
+    <%- 
+    include('./component/meta', {
+      appTitle: appTitle, 
+      appDescription: appDescription, 
+      ogTitle: ogTitle, 
+      ogDescription: ogDescription, 
+      ogUrl: ogUrl, 
+      ogImage: ogImage
+    }); 
+    -%>
+  </head> 
+  <body class="d-flex text-white bg-light" style="min-height: 100%;">
+    
+    <div class="container d-flex w-100 p-3 mx-auto flex-column" style="min-height: 100%; max-width: 100%;">
+      <%- include('./component/header',{ogUrl:ogUrl}),; -%>
+      <main class="px-3 text-dark" style="min-height: 100%;">
+        <!-- <h1 class="superbig upper text-center"><%= collection_name %></h1> -->
+        <!-- <div class="container">
+          <div class="row">
+            <div class="col-md-12 text-center">
+              <h1 class="animate-charcter superbig upper text-center"><%=collection_name%></h1>
+            </div>
+          </div>
+        </div> -->
+        <div class="info-div" style="margin-bottom:2%;">
+          <div class="row">
+              <div class="conatiner">
+                <div class="center">
+                  <h1 class="superbig upper text-center"><%=collection_name%></h1>
+                </div>
+              </div>
+              
+            </div>
+            <form class="search" style="margin-top:2%">
+              <div>
+                <fieldset style="margin:auto"> 
+                  <input class="search-text-input" type="text" name="search" placeholder="Search by ID..." value="<%= search %> ">
+                  <button type="submit" aria-label="Search" >
+                    <svg width="24" height="24" viewBox="0 0 512 512" class="icon text-black">
+                      <path fill="currentColor" d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"></path>
+                    </svg>
+                  </button>
+                </fieldset>
+              </div>
+            <div style="margin-top: 2%;">
+              <div style="margin-left:2%"> 
+                <a class="trait-fileter-btn btn btn-primary" data-bs-toggle="offcanvas" href="#traitFilterOffcanvas" role="button" aria-controls="offcanvasExample" >
+                  Trait Filter (<span id="trait-fileter-selected-num"><%= selectedTraits.length %></span>)
+                </a>
+              </div> 
+              <div style="margin-bottom: 2%;margin-left:0">
+                  <div style="margin:2%">
+                    <div class="form-check form-switch" style="width: 12rem; font-size: 1rem; line-height: 30px;">
+                      <input style="height: 25px; width: 40px;" class="form-check-input" type="checkbox" id="traitNormalization" <% if (useTraitNormalization == '1') { %> checked <% } %> >
+                      <label class="form-check-label text-white" for="traitNormalization">Trait Normalization</label>
+                    </div>
+                </div>
+                <div style="display:flex">
+                  <select id="sorting-select" class="form-select" name="order_by" style="margin-left:2%;margin-bottom: 2%;display:inline-block">
+                    <option value="rarity" <% if (orderBy=='rarity') { %> selected <% } %>>Sort By Rarity</option>
+                    <option value="id" <% if (orderBy=='id') { %> selected <% } %>>Sort By ID</option>
+                  </select>
+                  <div style="color:white;display: inline-block;margin-left:auto;margin-right:0; margin-top:auto;margin-bottom: auto;">
+                    <input type="text" name="pageNo" id="pageSearch" style="width:15%;" style="display:inline-block"> <h6 style="display:inline-block;margin:auto 4px">of <%=totalPage%> pages </h6>
+                    <a class="btn btn-danger" id="pageSearchLink" role="button" style="display:inline-block">Go</a>
+                </div>
+                </div>
+              </div> 
+            </div>
+          </form>
+        </div>
+
+
+        <div class="trait-fileter-offcanvas offcanvas offcanvas-start" tabindex="-1" id="traitFilterOffcanvas" aria-labelledby="traitFilterOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="traitFilterOffcanvasLabel">Select Traits</h5>
+            <button type="button" class="btn-close btn-close-white text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body" style="background-color: white;color: black;">
+            <%
+            let currentTriat = '';
+            allTraits.forEach(function(trait) { 
+            %>
+              <% 
+              if (currentTriat != trait.trait_type) {
+                if (currentTriat != '') {
+                  %>
+                  </select>
+                  <%
+                }
+              %>
+                <h4><%= trait.trait_type %></h4>
+                <select name="trait_select_<%= trait.trait_type_id %>" class="trait-select form-select mb-4">
+                  <option value="<%= trait.trait_type_id %>_All">All (<%= allTraitTypesData[trait.trait_type] %>)</option>
+                  <option value="<%= trait.trait_type_id %>_None" <% if (selectedTraits.includes(trait.trait_type_id+'_None')) { %> selected <% } %> >None (<%= (totalSupply - allTraitTypesData[trait.trait_type]) %>)</option>
+                  <option value="<%= trait.trait_type_id %>_<%= trait.trait_detail_type %>" <% if (selectedTraits.includes(trait.trait_type_id+'_'+trait.trait_detail_type)) { %> selected <% } %> ><%= trait.trait_detail_type %> (<%= trait.punk_count %>)</option>
+              <% 
+                currentTriat = trait.trait_type;
+              } else {
+              %>
+                  <option value="<%= trait.trait_type_id %>_<%= trait.trait_detail_type %>" <% if (selectedTraits.includes(trait.trait_type_id+'_'+trait.trait_detail_type)) { %> selected <% } %>><%= trait.trait_detail_type %> (<%= trait.punk_count %>)</option>
+              <%
+              }
+              %>
+            <%
+            });
+            %>
+            <% if (!_.isEmpty(allTraits)) { %>
+              </select>
+            <% } %>
+          </div>
+        </div>
+        <h3 class="mb-4" style="text-align:center">Total: <%= totalPunkCount %></h3>
+        
+        <div class="row punks" style="justify-content: space-between; overflow-y:auto; height:800px">
+          <% if (!_.isEmpty(punks)) { %>
+            <% punks.forEach(function(punk) { %>
+              <div class="col-lg-3 col-md-4 col-sm-6 col-6 col-xs-6 mb-5 punk-component" style="position:relative; background-color:#eccdd7;text-align:center;border-color:black;width:22%;padding:0;">
+                <%- include('./component/punk', {punk: punk, trait_normalization: useTraitNormalization, item_path_name:item_path_name}); -%>
+              </div>
+              <% }); %>
+          <% } else { %>
+          <h1 class="text-center">
+            There's no result.
+          </h1>
+          <% } %>
+        </div>
+        <%- 
+        include('./component/paginate', {
+          totalPage: totalPage, 
+          page: page, 
+          path: '/?search='+search+'&traits='+traits+'&trait_normalization='+useTraitNormalization+'&order_by='+orderBy,
+          ogUrl:ogUrl
+        }); 
+        -%>
+      </main>
+      <%- include('./component/footer'); -%>
+    </div>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+
+        const traitSelects = document.querySelectorAll('.trait-select');
+
+        function getSelectedTraits() {
+          let selectedTraits = [];
+          traitSelects.forEach(function(traitSelect) {
+            if (!traitSelect.value.includes('_All')) {
+              selectedTraits.push(traitSelect.value);
+            }
+          });
+          return selectedTraits;
+        }
+
+        const sortingSelect = document.querySelector('#sorting-select');
+      
+        if (sortingSelect) {
+          sortingSelect.addEventListener('change', async (event) => {
+            const sorting = event.target.value;
+            console.log(window.location.pathname)
+            window.location = `${window.location.pathname.replace(/\/+$/, '')}/?search=<%= search %>&traits=<%= traits %>&trait_normalization=<%= useTraitNormalization %>&order_by=`+sorting;
+          });
+        }
+
+        document.getElementById("pageSearch").addEventListener('change',async(event)=>{
+          // window.location = '/?search=<%= search %>&traits=<%= traits %>&trait_normalization=<%= useTraitNormalization %>&order_by='+sorting;
+          console.log(document.getElementById("pageSearchLink"))
+          document.getElementById("pageSearchLink").href =  `${window.location.pathname.replace(/\/+$/, '')}/?search=&traits=&trait_normalization=0&order_by=rarity&page=`+document.getElementById("pageSearch").value;
+        })
+
+        const traitNormalizationSwitch = document.querySelector('#traitNormalization');
+        if (traitNormalizationSwitch) {
+          traitNormalizationSwitch.addEventListener('change', async (event) => {
+            const useTraitNormalization = event.target.checked;
+            if (useTraitNormalization) {
+              window.location = window.location.pathname.replace(/\/+$/, '') +"?search=<%= search %>&traits=<%= traits %>&trait_normalization=1&order_by=<%= orderBy %>";
+            } else {
+              window.location = window.location.pathname.replace(/\/+$/, '') + "?search=<%= search %>&traits=<%= traits %>&trait_normalization=0&order_by=<%= orderBy %>";
+            }
+          });
+        }
+
+        let isChanged = false;
+        if (traitSelects) {
+          traitSelects.forEach(function(traitSelect) {
+            traitSelect.addEventListener('change', async (event) => {
+              const traitSelectedValue = event.target.value;
+              let selectedNum = 0;
+              traitSelects.forEach(function(traitSelect) {
+                if (!traitSelect.value.includes('_All')) {
+                  selectedNum = selectedNum + 1;  
+                }
+              });
+              document.getElementById("trait-fileter-selected-num").innerHTML = selectedNum;
+              isChanged = true;
+            });
+          }); 
+        }
+
+        const traitFilterOffcanvas = document.getElementById('traitFilterOffcanvas')
+        traitFilterOffcanvas.addEventListener('hidden.bs.offcanvas', function () {
+          console.log("location",window.location.pathname.replace(/\/+$/, ''))
+          if (traitSelects && isChanged) {
+            let selectedTraits = getSelectedTraits();
+            if (selectedTraits.length != 0) {
+              window.location = window.location.pathname.replace(/\/+$/, '')+'?search=<%= search %>&traits='+selectedTraits.join(',')+'&trait_normalization=<%= useTraitNormalization %>&order_by=<%= orderBy %>';
+            } else {
+              window.location = window.location.pathname.replace(/\/+$/, '')+ "?search=<%= search %>&trait_normalization=<%= useTraitNormalization %>&order_by=<%= orderBy %>";
+            }
+          }
+        });
+      });
+    </script> 
+  </body>
+</html>

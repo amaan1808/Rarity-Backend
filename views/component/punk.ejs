@@ -1,0 +1,39 @@
+<% let tokenItemUrl = punk.id; if (trait_normalization == 1) { tokenItemUrl =
+punk.id+'?trait_normalization=1'; } %>
+<!-- style="border-style:outset; position:relative; background-color:#fdeff4" -->
+<a
+  href="/<%= item_path_name %>/<%= tokenItemUrl %>"
+  style="text-decoration: none"
+>
+  <!-- <div style="position:relative; background-color:#eccdd7;text-align:center; width:80%"; margin:auto > -->
+  <% if (punk.rarity_rank) { %>
+  <h3 class="punk-rank text-dark">Rank #<%= punk.rarity_rank %></h3>
+  <% } %> <% if (punk.similar) { %>
+  <h3 class="punk-similar-score text-dark">
+    Similar Score #<%= punk.similar.toFixed(2) %>
+  </h3>
+  <% } %> <% if (content_image_is_video) { %>
+  <video
+    class="punk-avatar"
+    style="<% if (content_image_frame=='rectangle') { %> border-radius: 10px; <% } %> "
+    src="<%= punk.image.replace('ipfs://', 'https://ipfs.io/ipfs/'); %>"
+    alt="<%= punk.name %> "
+    style="width: 80%"
+  >
+    "/>
+  </video>
+  <% } else { %>
+  <img
+    class="punk-avatar"
+    style="<% if (content_image_frame=='rectangle') { %> border-radius: 10px; <% } %> "
+    src="<%= punk.image.replace('ipfs://', 'https://ipfs.io/ipfs/'); %>"
+    alt="<%= punk.name %>"
+    style="width: 30%"
+  />
+  <% } %>
+
+  <div id="outer" style="width: 100%">
+    <div class="button_slide slide_left"><%=punk.name%></div>
+  </div>
+  <!-- </div> -->
+</a>
