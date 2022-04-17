@@ -60,7 +60,7 @@ exports.rarity_analyze_normalized = (configFile) => {
     .prepare(
       `SELECT COUNT(${collection}s.id) as ${collection}_total FROM ${collection}s`
     )
-    .get().punk_total;
+    .get()[`${collection}_total`];
   let allTraits = db
     .prepare(
       `SELECT trait_types.trait_type, trait_detail_types.trait_detail_type, trait_detail_types.${collection}_count, trait_detail_types.trait_type_id, trait_detail_types.id trait_detail_type_id  FROM trait_detail_types INNER JOIN trait_types ON (trait_detail_types.trait_type_id = trait_types.id) ORDER BY trait_types.trait_type, trait_detail_types.trait_detail_type`
@@ -107,13 +107,13 @@ exports.rarity_analyze_normalized = (configFile) => {
   allTraits.forEach((detailTrait) => {
     traitTypeRarityScoreSum[detailTrait.trait_type_id] =
       traitTypeRarityScoreSum[detailTrait.trait_type_id] +
-      totalSupply / detailTrait.punk_count;
+      totalSupply / detailTrait[`${collection}_count`];
   });
   traitTypeRarityScoreSum[allTraitTypes.length] = 0;
   traitCounts.forEach((traitCount) => {
     traitTypeRarityScoreSum[allTraitTypes.length] =
       traitTypeRarityScoreSum[allTraitTypes.length] +
-      totalSupply / traitCount.punk_count;
+      totalSupply / traitCount[`${collection}_count`];
   });
 
   let traitTypeMeanRarity = [];
@@ -125,15 +125,11 @@ exports.rarity_analyze_normalized = (configFile) => {
         traitTypeRarityScoreSum[traitType.id] / traitTypeCountNum[traitType.id];
     }
   });
+
   traitTypeMeanRarity[allTraitTypes.length] =
     traitTypeRarityScoreSum[allTraitTypes.length] / traitCountNum;
   let meanRarity =
     traitTypeMeanRarity.reduce((a, b) => a + b, 0) / traitTypeMeanRarity.length;
-
-  console.log(traitTypeValueCount);
-  console.log(meanValueCount);
-  console.log(traitTypeMeanRarity);
-  console.log(meanRarity);
 
   let createScoreTableStmt = `CREATE TABLE normalized_${collection}_scores ( id INT, ${collection}_id INT, `;
   let insertPunkScoreStmt = `INSERT INTO normalized_${collection}_scores VALUES (:id, :${collection}_id, `;
@@ -177,7 +173,7 @@ exports.rarity_analyze_normalized = (configFile) => {
     let raritySum = 0;
     let normalizedPunkScore = {};
     normalizedPunkScore["id"] = punkScore.id;
-    normalizedPunkScore[`${collection}_id`] = punkScore.punk_id;
+    normalizedPunkScore[`${collection}_id`] = punkScore[`${collection}_id`];
 
     for (let i = 0; i < traitTypeMeanRarity.length; i++) {
       let a = 0;
@@ -213,10 +209,6 @@ exports.rarity_analyze_normalized = (configFile) => {
         rarity_score_normalized = (r - a * r) * c + a * r;
       }
 
-      //console.log(i);
-      //console.log(r);
-      //console.log(rarity_score_normalized);
-
       if (i == traitTypeMeanRarity.length - 1) {
         normalizedPunkScore["trait_count"] = punkScore["trait_count"];
         normalizedPunkScore["trait_count_percentile"] =
@@ -246,7 +238,7 @@ exports.rarity_analyze_normalized = (configFile) => {
       }
     }
 
-    //console.log(normalizedPunkScore);
+    // console.log(normalizedPunkScore);
 
     insertPunkScoreStmt.run(normalizedPunkScore);
   });

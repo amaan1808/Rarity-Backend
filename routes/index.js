@@ -25,6 +25,13 @@ router.get("/:collectionName", function (req, res, next) {
   // }
   const db = new Database(databasePath);
 
+  let collectionDetails;
+  try {
+    collectionDetails = db
+      .prepare(`SELECT * FROM ${req.params.collectionName}_details`)
+      .all();
+  } catch (err) {}
+
   let search = req.query.search;
   let traits = req.query.traits;
   let useTraitNormalization = req.query.trait_normalization;
@@ -199,13 +206,9 @@ router.get("/:collectionName", function (req, res, next) {
   punksQueryValue["offset"] = offset;
   punksQueryValue["limit"] = limit;
 
-  console.log(punksQueryValue, "punksQueryValue");
-
   totalPunkCount = db
     .prepare(totalPunkCountQuery)
     .get(totalPunkCountQueryValue);
-
-  console.log(totalPunkCount, "fjenfkfwebhj");
 
   totalPunkCount = [...Object.values(totalPunkCount)][0];
   punks = db.prepare(punksQuery).all(punksQueryValue);
@@ -214,6 +217,13 @@ router.get("/:collectionName", function (req, res, next) {
   res.status(200).json({
     appTitle: config.app_name,
     appDescription: config.app_description,
+    details: collectionDetails?.length
+      ? collectionDetails[0]
+      : {
+          discord: "",
+          twitter: "",
+          collection_image: "",
+        },
     ogTitle: config.collection_name + " | " + config.app_name,
     ogDescription:
       config.collection_description + " | " + config.app_description,
@@ -351,9 +361,28 @@ router.get("/", (req, res, next) => {
   files = files
     .filter((el) => el.slice(-6) === "sqlite")
     .map((el) => el.slice(0, -7));
+
   let collection = [];
   files.forEach((file) => {
-    collection.push({ name: file, content: "NO content", link: `/${file}` });
+    let databasePath = appRoot + "/config/" + file + ".sqlite";
+
+    const db = new Database(databasePath);
+    let collectionDetails;
+    try {
+      collectionDetails = db.prepare(`SELECT * FROM ${file}_details`).all();
+    } catch (err) {}
+
+    const body = {
+      name: file,
+      content: "NO content",
+      link: `/${file}`,
+    };
+
+    if (collectionDetails?.length) {
+      body.details = collectionDetails[0];
+    }
+
+    collection.push(body);
   });
   res.status(200).json({ collections: collection });
 });

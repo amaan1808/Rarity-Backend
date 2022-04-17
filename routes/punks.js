@@ -11,10 +11,10 @@ const MarkdownIt = require("markdown-it"),
 
 /* GET punks listing. */
 router.get("/:id", function (req, res, next) {
-  const collection = req.originalUrl.replace(`/${req.params.id}`, "").slice(1);
+  const collection = req.originalUrl.replace(`/${req.params.id}`, "").slice(5);
+  let punkId = req.params.id;
   const config = require(appRoot + `/config/${collection}_config.js`);
   // config = config1;
-  let punkId = req.params.id;
   let useTraitNormalization = req.query.trait_normalization;
 
   let databasePath = appRoot + "/config/" + config.sqlite_file_name;
@@ -136,7 +136,7 @@ router.get("/:id", function (req, res, next) {
 router.get("/:id/json", function (req, res, next) {
   const collection = req.originalUrl
     .replace(`/${req.params.id}/json`, "")
-    .slice(1);
+    .slice(5);
   const config = require(appRoot + `/config/${collection}_config.js`);
   let databasePath = appRoot + "/config/" + config.sqlite_file_name;
   const db = new Database(databasePath);
@@ -189,7 +189,7 @@ router.get("/:id/json", function (req, res, next) {
 router.get("/:id/similar", function (req, res, next) {
   const collection = req.originalUrl
     .replace(`/${req.params.id}/similar`, "")
-    .slice(1);
+    .slice(5);
   const config = require(appRoot + `/config/${collection}_config.js`);
   let databasePath = appRoot + "/config/" + config.sqlite_file_name;
   const db = new Database(databasePath);

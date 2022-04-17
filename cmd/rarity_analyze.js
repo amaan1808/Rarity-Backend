@@ -57,6 +57,14 @@ exports.rarity_analyze = (configFile) => {
   );
 
   db.exec(
+    `CREATE TABLE ${collection}_details (` +
+      "collection_image TEXT, " +
+      "discord TEXT, " +
+      "twitter TEXT " +
+      ")"
+  );
+
+  db.exec(
     "CREATE TABLE trait_types (" +
       "id INT, " +
       "trait_type TEXT, " +
@@ -90,6 +98,9 @@ exports.rarity_analyze = (configFile) => {
       ")"
   );
 
+  let insertCollectionDetails = db.prepare(
+    `INSERT INTO ${collection}_details VALUES (?, ?, ?)`
+  );
   let insertPunkStmt = db.prepare(
     `INSERT INTO ${collection}s VALUES (?, ?, ?, ?, ?, ?)`
   );
@@ -101,6 +112,12 @@ exports.rarity_analyze = (configFile) => {
   );
   let insertPuntTraitStmt = db.prepare(
     `INSERT INTO ${collection}_traits VALUES (?, ?, ?, ?)`
+  );
+
+  insertCollectionDetails.run(
+    config.collection_image || "",
+    config.discord || "",
+    config.twitter || ""
   );
 
   let count1 = config.collection_id_from;
@@ -118,8 +135,7 @@ exports.rarity_analyze = (configFile) => {
       element["name"] = config.collection_name + " #" + element.id;
     }
     if (!element.name.includes("#" + element.id)) {
-      element["name"] =
-        element["name"] + " #" + (count1 + config.collection_id_from);
+      element["name"] = element["name"];
     }
     if (_.isEmpty(element.description)) {
       element["description"] = "";

@@ -9,12 +9,13 @@ var cors = require("cors");
 
 var indexRouter = require("./routes/index");
 var punksRouter = require("./routes/punks");
+const uploadsRouter = require("./routes/upload");
 
 var app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:3001"],
+    origin: ["http://localhost:3000"],
     credentials: true,
     preflightContinue: false,
   })
@@ -49,8 +50,9 @@ app.locals.content_image_frame = config.content_image_frame;
 app.locals.item_path_name = config.item_path_name;
 app.locals.use_wallet = config.use_wallet;
 
-app.use("/", indexRouter);
-app.use("/:collectionName", punksRouter); // +config.item_path_name
+app.use("/api", indexRouter);
+app.use("/api/:collectionName", punksRouter); // +config.istem_path_name
+app.use("/api/upload-image", uploadsRouter); // +config.istem_path_name
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

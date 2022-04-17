@@ -17,6 +17,9 @@ const config = {
   content_image_is_video: false,
   content_image_frame: "circle", // circle, rectangle
   use_wallet: false,
+  discord: 'https://www.google.com',
+  twitter: 'https://twitter.com',
+  collection_image: 'https://rarity-assets.nyc3.digitaloceanspaces.com/Group%2033951.png'
 };
 
 module.exports = config;
