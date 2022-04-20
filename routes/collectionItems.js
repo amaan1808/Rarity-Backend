@@ -9,13 +9,13 @@ const _ = require("lodash");
 const MarkdownIt = require("markdown-it"),
   md = new MarkdownIt();
 
-/* GET punks listing. */
+/* GET collectionItems listing. */
 router.get("/:id", function (req, res, next) {
   const collection = req.originalUrl
     .split("?")[0]
     .replace(`/${req.params.id}`, "")
     .slice(5);
-  let punkId = req.params.id;
+  let collectionItemId = req.params.id;
   const config = require(appRoot + `/config/${collection}_config.js`);
   // config = config1;
   let useTraitNormalization = req?.query?.trait_normalization;
@@ -32,7 +32,7 @@ router.get("/:id", function (req, res, next) {
     useTraitNormalization = "0";
   }
 
-  let punk = db
+  let collectionItem = db
     .prepare(
       `SELECT ${collection}s.*, ` +
         scoreTable +
@@ -42,8 +42,8 @@ router.get("/:id", function (req, res, next) {
         scoreTable +
         `.${collection}_id) WHERE ${collection}s.id = ?`
     )
-    .get(punkId);
-  let punkScore = db
+    .get(collectionItemId);
+  let collectionItemScore = db
     .prepare(
       "SELECT " +
         scoreTable +
@@ -53,7 +53,7 @@ router.get("/:id", function (req, res, next) {
         scoreTable +
         `.${collection}_id = ?`
     )
-    .get(punkId);
+    .get(collectionItemId);
   let allTraitTypes = db.prepare("SELECT trait_types.* FROM trait_types").all();
   let allDetailTraitTypes = db
     .prepare("SELECT trait_detail_types.* FROM trait_detail_types")
@@ -64,25 +64,25 @@ router.get("/:id", function (req, res, next) {
     )
     .all();
 
-  let punkTraits = db
+  let collectionItemTraits = db
     .prepare(
       `SELECT ${collection}_traits.*, trait_types.trait_type  FROM ${collection}_traits INNER JOIN trait_types ON (${collection}_traits.trait_type_id = trait_types.id) WHERE ${collection}_traits.${collection}_id = ?`
     )
-    .all(punkId);
-  let totalPunkCount = db
+    .all(collectionItemId);
+  let totalCollectionItemCount = db
     .prepare(`SELECT COUNT(id) as ${collection}_total FROM ${collection}s`)
-    .get().punk_total;
+    .get().collectionItem_total;
 
-  let punkTraitData = {};
-  let ignoredPunkTraitData = {};
+  let collectionItemTraitData = {};
+  let ignoredCollectionItemTraitData = {};
   let ignoreTraits = config.ignore_traits.map((ignore_trait) =>
     ignore_trait.toLowerCase()
   );
-  punkTraits.forEach((punkTrait) => {
-    punkTraitData[punkTrait.trait_type_id] = punkTrait.value;
+  collectionItemTraits.forEach((collectionItemTrait) => {
+    collectionItemTraitData[collectionItemTrait.trait_type_id] = collectionItemTrait.value;
 
-    if (!ignoreTraits.includes(punkTrait.trait_type.toLowerCase())) {
-      ignoredPunkTraitData[punkTrait.trait_type_id] = punkTrait.value;
+    if (!ignoreTraits.includes(collectionItemTrait.trait_type.toLowerCase())) {
+      ignoredCollectionItemTraitData[collectionItemTrait.trait_type_id] = collectionItemTrait.value;
     }
   });
 
@@ -90,24 +90,24 @@ router.get("/:id", function (req, res, next) {
   allDetailTraitTypes.forEach((detailTrait) => {
     allDetailTraitTypesData[
       detailTrait.trait_type_id + "|||" + detailTrait.trait_detail_type
-    ] = detailTrait.punk_count;
+    ] = detailTrait.collectionItem_count;
   });
 
   let allTraitCountTypesData = {};
   allTraitCountTypes.forEach((traitCount) => {
-    allTraitCountTypesData[traitCount.trait_count] = traitCount.punk_count;
+    allTraitCountTypesData[traitCount.trait_count] = traitCount.collectionItem_count;
   });
 
   let title = config.collection_name + " | " + config.app_name;
   //let description = config.collection_description + ' | ' + config.app_description
-  let description = punk
-    ? `💎 ID: ${punk.id}
-    💎 Rarity Rank: ${punk.rarity_rank}
-    💎 Rarity Score: ${punkScore.rarity_sum.toFixed(2)}`
+  let description = collectionItem
+    ? `💎 ID: ${collectionItem.id}
+    💎 Rarity Rank: ${collectionItem.rarity_rank}
+    💎 Rarity Score: ${collectionItemScore.rarity_sum.toFixed(2)}`
     : "";
 
-  if (!_.isEmpty(punk)) {
-    title = punk.name + " | " + config.app_name;
+  if (!_.isEmpty(collectionItem)) {
+    title = collectionItem.name + " | " + config.app_name;
   }
 
   res.status(200).json({
@@ -116,18 +116,18 @@ router.get("/:id", function (req, res, next) {
     ogTitle: title,
     ogDescription: description,
     ogUrl: req.protocol + "://" + req.get("host") + "/" + collection,
-    ogImage: punk
-      ? punk.image.replace("ipfs://", "https://ipfs.io/ipfs/")
+    ogImage: collectionItem
+      ? collectionItem.image.replace("ipfs://", "https://ipfs.io/ipfs/")
       : config.main_og_image,
     activeTab: "rarity",
-    punk: punk,
-    punkScore: punkScore,
+    collectionItem: collectionItem,
+    collectionItemScore: collectionItemScore,
     allTraitTypes: allTraitTypes,
     allDetailTraitTypesData: allDetailTraitTypesData,
     allTraitCountTypesData: allTraitCountTypesData,
-    punkTraitData: punkTraitData,
-    ignoredPunkTraitData: ignoredPunkTraitData,
-    totalPunkCount: totalPunkCount,
+    collectionItemTraitData: collectionItemTraitData,
+    ignoredCollectionItemTraitData: ignoredCollectionItemTraitData,
+    totalCollectionItemCount: totalCollectionItemCount,
     item_path_name: config.item_path_name,
     trait_normalization: useTraitNormalization,
     _: _,
@@ -143,7 +143,7 @@ router.get("/:id/json", function (req, res, next) {
   let databasePath = appRoot + "/config/" + config.sqlite_file_name;
   const db = new Database(databasePath);
 
-  let punkId = req.params.id;
+  let collectionItemId = req.params.id;
   let useTraitNormalization = req.query.trait_normalization;
 
   let scoreTable = `${collection}_scores`;
@@ -154,7 +154,7 @@ router.get("/:id/json", function (req, res, next) {
     useTraitNormalization = "0";
   }
 
-  let punk = db
+  let collectionItem = db
     .prepare(
       `SELECT ${collection}s.*, ` +
         scoreTable +
@@ -164,10 +164,10 @@ router.get("/:id/json", function (req, res, next) {
         scoreTable +
         `.${collection}_id) WHERE ${collection}s.id = ?`
     )
-    .get(punkId);
-  console.log(punk);
+    .get(collectionItemId);
+  console.log(collectionItem);
 
-  if (_.isEmpty(punk)) {
+  if (_.isEmpty(collectionItem)) {
     res.end(
       JSON.stringify({
         status: "fail",
@@ -176,14 +176,14 @@ router.get("/:id/json", function (req, res, next) {
     );
   }
 
-  let punkData = jsondata.punk(punk, scoreTable, collection);
+  let collectionItemData = jsondata.collectionItem(collectionItem, scoreTable, collection);
 
   res.setHeader("Content-Type", "application/json");
   res.end(
     JSON.stringify({
       status: "success",
       message: "success",
-      punk: punkData,
+      collectionItem: collectionItemData,
     })
   );
 });
@@ -195,7 +195,7 @@ router.get("/:id/similar", function (req, res, next) {
   const config = require(appRoot + `/config/${collection}_config.js`);
   let databasePath = appRoot + "/config/" + config.sqlite_file_name;
   const db = new Database(databasePath);
-  let punkId = req.params.id;
+  let collectionItemId = req.params.id;
   let useTraitNormalization = req.query.trait_normalization;
 
   let scoreTable = `${collection}_scores`;
@@ -206,7 +206,7 @@ router.get("/:id/similar", function (req, res, next) {
     useTraitNormalization = "0";
   }
 
-  let punk = db
+  let collectionItem = db
     .prepare(
       `SELECT ${collection}s.*, ` +
         scoreTable +
@@ -216,8 +216,8 @@ router.get("/:id/similar", function (req, res, next) {
         scoreTable +
         `.${collection}_id) WHERE ${collection}s.id = ?`
     )
-    .get(punkId);
-  let punkScore = db
+    .get(collectionItemId);
+  let collectionItemScore = db
     .prepare(
       "SELECT " +
         scoreTable +
@@ -227,12 +227,12 @@ router.get("/:id/similar", function (req, res, next) {
         scoreTable +
         `.${collection}_id = ?`
     )
-    .get(punkId);
+    .get(collectionItemId);
   let allTraitTypes = db.prepare("SELECT trait_types.* FROM trait_types").all();
   let similarCondition = "";
   let similarTo = {};
-  let similarPunks = null;
-  if (punkScore) {
+  let similarCollectionItems = null;
+  if (collectionItemScore) {
     allTraitTypes.forEach((traitType) => {
       similarCondition =
         similarCondition +
@@ -248,11 +248,11 @@ router.get("/:id/similar", function (req, res, next) {
         traitType.id +
         "_rarity, 0) + ";
       similarTo["trait_type_" + traitType.id] =
-        punkScore["trait_type_" + traitType.id + "_value"];
+        collectionItemScore["trait_type_" + traitType.id + "_value"];
     });
-    similarTo["trait_count"] = punkScore["trait_count"];
-    similarTo[`this_${collection}_id`] = punkId;
-    similarPunks = db
+    similarTo["trait_count"] = collectionItemScore["trait_count"];
+    similarTo[`this_${collection}_id`] = collectionItemId;
+    similarCollectionItems = db
       .prepare(
         `
       SELECT
@@ -288,8 +288,8 @@ router.get("/:id/similar", function (req, res, next) {
   let title = config.collection_name + " | " + config.app_name;
   let description =
     config.collection_description + " | " + config.app_description;
-  if (!_.isEmpty(punk)) {
-    title = punk.name + " | " + config.app_name;
+  if (!_.isEmpty(collectionItem)) {
+    title = collectionItem.name + " | " + config.app_name;
   }
 
   res.status(200).json({
@@ -298,12 +298,12 @@ router.get("/:id/similar", function (req, res, next) {
     ogTitle: title,
     ogDescription: description,
     ogUrl: req.protocol + "://" + req.get("host") + "/" + collection,
-    ogImage: punk
-      ? punk.image.replace("ipfs://", "https://ipfs.io/ipfs/")
+    ogImage: collectionItem
+      ? collectionItem.image.replace("ipfs://", "https://ipfs.io/ipfs/")
       : config.main_og_image,
     activeTab: "rarity",
-    punk: punk,
-    similarPunks: similarPunks,
+    collectionItem: collectionItem,
+    similarCollectionItems: similarCollectionItems,
     trait_normalization: useTraitNormalization,
     item_path_name: config.item_path_name,
     _: _,

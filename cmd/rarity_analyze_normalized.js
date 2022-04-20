@@ -132,7 +132,7 @@ exports.rarity_analyze_normalized = (configFile) => {
     traitTypeMeanRarity.reduce((a, b) => a + b, 0) / traitTypeMeanRarity.length;
 
   let createScoreTableStmt = `CREATE TABLE normalized_${collection}_scores ( id INT, ${collection}_id INT, `;
-  let insertPunkScoreStmt = `INSERT INTO normalized_${collection}_scores VALUES (:id, :${collection}_id, `;
+  let insertCollectionItemScoreStmt = `INSERT INTO normalized_${collection}_scores VALUES (:id, :${collection}_id, `;
 
   allTraitTypes.forEach((traitType) => {
     createScoreTableStmt =
@@ -144,8 +144,8 @@ exports.rarity_analyze_normalized = (configFile) => {
       "_rarity DOUBLE, trait_type_" +
       traitType.id +
       "_value TEXT, ";
-    insertPunkScoreStmt =
-      insertPunkScoreStmt +
+    insertCollectionItemScoreStmt =
+      insertCollectionItemScoreStmt +
       ":trait_type_" +
       traitType.id +
       "_percentile, :trait_type_" +
@@ -158,22 +158,22 @@ exports.rarity_analyze_normalized = (configFile) => {
   createScoreTableStmt =
     createScoreTableStmt +
     "trait_count INT,  trait_count_percentile DOUBLE, trait_count_rarity DOUBLE, rarity_sum DOUBLE, rarity_rank INT)";
-  insertPunkScoreStmt =
-    insertPunkScoreStmt +
+  insertCollectionItemScoreStmt =
+    insertCollectionItemScoreStmt +
     ":trait_count,  :trait_count_percentile, :trait_count_rarity, :rarity_sum, :rarity_rank)";
 
   db.exec(createScoreTableStmt);
-  insertPunkScoreStmt = db.prepare(insertPunkScoreStmt);
+  insertCollectionItemScoreStmt = db.prepare(insertCollectionItemScoreStmt);
 
-  let punkScores = db.prepare(`SELECT * FROM ${collection}_scores`).all();
+  let collectionItemScores = db.prepare(`SELECT * FROM ${collection}_scores`).all();
 
-  punkScores.forEach((punkScore) => {
-    console.log(`Normalize ${collection}: #` + punkScore.id);
+  collectionItemScores.forEach((collectionItemScore) => {
+    console.log(`Normalize ${collection}: #` + collectionItemScore.id);
 
     let raritySum = 0;
-    let normalizedPunkScore = {};
-    normalizedPunkScore["id"] = punkScore.id;
-    normalizedPunkScore[`${collection}_id`] = punkScore[`${collection}_id`];
+    let normalizedCollectionItemScore = {};
+    normalizedCollectionItemScore["id"] = collectionItemScore.id;
+    normalizedCollectionItemScore[`${collection}_id`] = collectionItemScore[`${collection}_id`];
 
     for (let i = 0; i < traitTypeMeanRarity.length; i++) {
       let a = 0;
@@ -193,8 +193,8 @@ exports.rarity_analyze_normalized = (configFile) => {
       let c = traitTypeValueCount[i] >= meanValueCount ? 1 - b : 1 + b;
       let r =
         i == traitTypeMeanRarity.length - 1
-          ? punkScore["trait_count_rarity"]
-          : punkScore["trait_type_" + i + "_rarity"];
+          ? collectionItemScore["trait_count_rarity"]
+          : collectionItemScore["trait_type_" + i + "_rarity"];
       let rarity_score_normalized = 0;
 
       if (
@@ -210,58 +210,58 @@ exports.rarity_analyze_normalized = (configFile) => {
       }
 
       if (i == traitTypeMeanRarity.length - 1) {
-        normalizedPunkScore["trait_count"] = punkScore["trait_count"];
-        normalizedPunkScore["trait_count_percentile"] =
-          punkScore["trait_count_percentile"];
-        normalizedPunkScore["trait_count_rarity"] = rarity_score_normalized;
+        normalizedCollectionItemScore["trait_count"] = collectionItemScore["trait_count"];
+        normalizedCollectionItemScore["trait_count_percentile"] =
+          collectionItemScore["trait_count_percentile"];
+        normalizedCollectionItemScore["trait_count_rarity"] = rarity_score_normalized;
         raritySum = raritySum + rarity_score_normalized;
-        normalizedPunkScore["rarity_sum"] = raritySum;
-        normalizedPunkScore["rarity_rank"] = 0;
+        normalizedCollectionItemScore["rarity_sum"] = raritySum;
+        normalizedCollectionItemScore["rarity_rank"] = 0;
       } else {
         if (
           !ignoreTraits.includes(
-            punkScore["trait_type_" + i + "_value"].toLowerCase()
+            collectionItemScore["trait_type_" + i + "_value"].toLowerCase()
           )
         ) {
-          normalizedPunkScore["trait_type_" + i + "_percentile"] =
-            punkScore["trait_type_" + i + "_percentile"];
-          normalizedPunkScore["trait_type_" + i + "_rarity"] =
+          normalizedCollectionItemScore["trait_type_" + i + "_percentile"] =
+            collectionItemScore["trait_type_" + i + "_percentile"];
+          normalizedCollectionItemScore["trait_type_" + i + "_rarity"] =
             rarity_score_normalized;
           raritySum = raritySum + rarity_score_normalized;
         } else {
-          normalizedPunkScore["trait_type_" + i + "_percentile"] = 0;
-          normalizedPunkScore["trait_type_" + i + "_rarity"] = 0;
+          normalizedCollectionItemScore["trait_type_" + i + "_percentile"] = 0;
+          normalizedCollectionItemScore["trait_type_" + i + "_rarity"] = 0;
           raritySum = raritySum + 0;
         }
-        normalizedPunkScore["trait_type_" + i + "_value"] =
-          punkScore["trait_type_" + i + "_value"];
+        normalizedCollectionItemScore["trait_type_" + i + "_value"] =
+          collectionItemScore["trait_type_" + i + "_value"];
       }
     }
 
-    // console.log(normalizedPunkScore);
+    // console.log(normalizedCollectionItemScore);
 
-    insertPunkScoreStmt.run(normalizedPunkScore);
+    insertCollectionItemScoreStmt.run(normalizedCollectionItemScore);
   });
 
-  const punkScoreStmt = db.prepare(
+  const collectionItemScoreStmt = db.prepare(
     `SELECT rarity_sum FROM normalized_${collection}_scores WHERE ${collection}_id = ?`
   );
-  const punkRankStmt = db.prepare(
+  const collectionItemRankStmt = db.prepare(
     `SELECT COUNT(id) as higherRank FROM normalized_${collection}_scores WHERE rarity_sum > ?`
   );
-  let updatPunkRankStmt = db.prepare(
+  let updatCollectionItemRankStmt = db.prepare(
     `UPDATE normalized_${collection}_scores SET rarity_rank = :rarity_rank WHERE ${collection}_id = :${collection}_id`
   );
 
-  punkScores.forEach((punkScore) => {
+  collectionItemScores.forEach((collectionItemScore) => {
     console.log(
-      `Normalized ranking ${collection}: #` + punkScore[`${collection}_id`]
+      `Normalized ranking ${collection}: #` + collectionItemScore[`${collection}_id`]
     );
-    let normalizedPunkScore = punkScoreStmt.get(punkScore[`${collection}_id`]);
-    let punkRank = punkRankStmt.get(normalizedPunkScore.rarity_sum);
-    updatPunkRankStmt.run({
-      rarity_rank: punkRank.higherRank + 1,
-      [`${collection}_id`]: punkScore[`${collection}_id`],
+    let normalizedCollectionItemScore = collectionItemScoreStmt.get(collectionItemScore[`${collection}_id`]);
+    let collectionItemRank = collectionItemRankStmt.get(normalizedCollectionItemScore.rarity_sum);
+    updatCollectionItemRankStmt.run({
+      rarity_rank: collectionItemRank.higherRank + 1,
+      [`${collection}_id`]: collectionItemScore[`${collection}_id`],
     });
   });
 };

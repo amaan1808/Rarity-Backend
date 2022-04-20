@@ -75,8 +75,8 @@ router.get("/:collectionName", function (req, res, next) {
   }
 
   let selectedTraits = traits != "" ? traits.split(",") : [];
-  let totalPunkCount = 0;
-  let punks = null;
+  let totalCollectionItemCount = 0;
+  let collectionItems = null;
   let orderByStmt = "";
   if (orderBy == "rarity") {
     orderByStmt = "ORDER BY " + scoreTable + ".rarity_rank ASC";
@@ -108,13 +108,13 @@ router.get("/:collectionName", function (req, res, next) {
       `SELECT trait_types.trait_type, trait_detail_types.trait_detail_type, trait_detail_types.${req.params.collectionName}_count, trait_detail_types.trait_type_id, trait_detail_types.id trait_detail_type_id  FROM trait_detail_types INNER JOIN trait_types ON (trait_detail_types.trait_type_id = trait_types.id) WHERE trait_detail_types.${req.params.collectionName}_count != 0 ORDER BY trait_types.trait_type, trait_detail_types.trait_detail_type`
     )
     .all();
-  let totalPunkCountQuery =
+  let totalCollectionItemCountQuery =
     `SELECT COUNT(${req.params.collectionName}s.id) as ${req.params.collectionName}_total FROM ${req.params.collectionName}s INNER JOIN ` +
     scoreTable +
     ` ON (${req.params.collectionName}s.id = ` +
     scoreTable +
     `.${req.params.collectionName}_id) `;
-  let punksQuery =
+  let collectionItemsQuery =
     `SELECT ${req.params.collectionName}s.*, ` +
     scoreTable +
     `.rarity_rank FROM ${req.params.collectionName}s INNER JOIN ` +
@@ -122,23 +122,23 @@ router.get("/:collectionName", function (req, res, next) {
     ` ON (${req.params.collectionName}s.id = ` +
     scoreTable +
     `.${req.params.collectionName}_id) `;
-  let totalPunkCountQueryValue = {};
-  let punksQueryValue = {};
+  let totalCollectionItemCountQueryValue = {};
+  let collectionItemsQueryValue = {};
 
   if (!_.isEmpty(search)) {
     search = parseInt(search);
-    totalPunkCountQuery =
-      totalPunkCountQuery +
+    totalCollectionItemCountQuery =
+      totalCollectionItemCountQuery +
       ` WHERE ${req.params.collectionName}s.id LIKE :${req.params.collectionName}_id `;
-    totalPunkCountQueryValue[`${req.params.collectionName}_id`] =
+    totalCollectionItemCountQueryValue[`${req.params.collectionName}_id`] =
       "%" + search + "%";
 
-    punksQuery =
-      punksQuery +
+    collectionItemsQuery =
+      collectionItemsQuery +
       ` WHERE ${req.params.collectionName}s.id LIKE :${req.params.collectionName}_id `;
-    punksQueryValue[`${req.params.collectionName}_id`] = "%" + search + "%";
+    collectionItemsQueryValue[`${req.params.collectionName}_id`] = "%" + search + "%";
   } else {
-    totalPunkCount = totalPunkCount;
+    totalCollectionItemCount = totalCollectionItemCount;
   }
 
   let allTraitTypeIds = [];
@@ -159,18 +159,18 @@ router.get("/:collectionName", function (req, res, next) {
 
     if (purifySelectedTraits.length > 0) {
       if (!_.isEmpty(search.toString())) {
-        totalPunkCountQuery = totalPunkCountQuery + " AND ";
-        punksQuery = punksQuery + " AND ";
+        totalCollectionItemCountQuery = totalCollectionItemCountQuery + " AND ";
+        collectionItemsQuery = collectionItemsQuery + " AND ";
       } else {
-        totalPunkCountQuery = totalPunkCountQuery + " WHERE ";
-        punksQuery = punksQuery + " WHERE ";
+        totalCollectionItemCountQuery = totalCollectionItemCountQuery + " WHERE ";
+        collectionItemsQuery = collectionItemsQuery + " WHERE ";
       }
       let count = 0;
 
       purifySelectedTraits.forEach((selectedTrait) => {
         selectedTrait = selectedTrait.split("_");
-        totalPunkCountQuery =
-          totalPunkCountQuery +
+        totalCollectionItemCountQuery =
+          totalCollectionItemCountQuery +
           " " +
           scoreTable +
           ".trait_type_" +
@@ -178,8 +178,8 @@ router.get("/:collectionName", function (req, res, next) {
           "_value = :trait_type_" +
           selectedTrait[0] +
           "_value ";
-        punksQuery =
-          punksQuery +
+        collectionItemsQuery =
+          collectionItemsQuery +
           " " +
           scoreTable +
           ".trait_type_" +
@@ -188,31 +188,31 @@ router.get("/:collectionName", function (req, res, next) {
           selectedTrait[0] +
           "_value ";
         if (count != purifySelectedTraits.length - 1) {
-          totalPunkCountQuery = totalPunkCountQuery + " AND ";
-          punksQuery = punksQuery + " AND ";
+          totalCollectionItemCountQuery = totalCollectionItemCountQuery + " AND ";
+          collectionItemsQuery = collectionItemsQuery + " AND ";
         }
         count++;
 
-        totalPunkCountQueryValue["trait_type_" + selectedTrait[0] + "_value"] =
+        totalCollectionItemCountQueryValue["trait_type_" + selectedTrait[0] + "_value"] =
           selectedTrait[1];
-        punksQueryValue["trait_type_" + selectedTrait[0] + "_value"] =
+        collectionItemsQueryValue["trait_type_" + selectedTrait[0] + "_value"] =
           selectedTrait[1];
       });
     }
   }
   let purifyTraits = purifySelectedTraits.join(",");
 
-  punksQuery = punksQuery + " " + orderByStmt + " LIMIT :offset,:limit";
-  punksQueryValue["offset"] = offset;
-  punksQueryValue["limit"] = limit;
+  collectionItemsQuery = collectionItemsQuery + " " + orderByStmt + " LIMIT :offset,:limit";
+  collectionItemsQueryValue["offset"] = offset;
+  collectionItemsQueryValue["limit"] = limit;
 
-  totalPunkCount = db
-    .prepare(totalPunkCountQuery)
-    .get(totalPunkCountQueryValue);
+  totalCollectionItemCount = db
+    .prepare(totalCollectionItemCountQuery)
+    .get(totalCollectionItemCountQueryValue);
 
-  totalPunkCount = [...Object.values(totalPunkCount)][0];
-  punks = db.prepare(punksQuery).all(punksQueryValue);
-  let totalPage = Math.ceil(totalPunkCount / limit);
+  totalCollectionItemCount = [...Object.values(totalCollectionItemCount)][0];
+  collectionItems = db.prepare(collectionItemsQuery).all(collectionItemsQueryValue);
+  let totalPage = Math.ceil(totalCollectionItemCount / limit);
 
   res.status(200).json({
     appTitle: config.app_name,
@@ -232,8 +232,8 @@ router.get("/:collectionName", function (req, res, next) {
       req.protocol + "://" + req.get("host") + "/" + req.params.collectionName, //ogUrl: req.protocol + "://" + req.get("host") + req.originalUrl,
     ogImage: config.main_og_image,
     activeTab: "rarity",
-    punks: punks,
-    totalPunkCount: totalPunkCount,
+    collectionItems: collectionItems,
+    totalCollectionItemCount: totalCollectionItemCount,
     totalPage: totalPage,
     search: search,
     useTraitNormalization: useTraitNormalization,
@@ -270,12 +270,12 @@ router.get("/:collectionName/matrix", function (req, res, next) {
       `SELECT * FROM ${req.params.collectionName}_trait_counts WHERE ${req.params.collectionName}_count != 0 ORDER BY trait_count`
     )
     .all();
-  let totalPunkCount = db
+  let totalCollectionItemCount = db
     .prepare(
       `SELECT COUNT(id) as ${req.params.collectionName}_total FROM ${req.params.collectionName}s`
     )
     .get();
-  totalPunkCount = [...Object.values(totalPunkCount)][0];
+  totalCollectionItemCount = [...Object.values(totalCollectionItemCount)][0];
 
   res.status(200).json({
     appTitle: config.app_name,
@@ -292,7 +292,7 @@ router.get("/:collectionName/matrix", function (req, res, next) {
     activeTab: "matrix",
     allTraits: allTraits,
     allTraitCounts: allTraitCounts,
-    totalPunkCount: totalPunkCount,
+    totalCollectionItemCount: totalCollectionItemCount,
     _: _,
   });
 });
@@ -315,7 +315,7 @@ router.get("/wallet", function (req, res, next) {
 
   let isAddress = Web3.utils.isAddress(search);
   let tokenIds = [];
-  let punks = null;
+  let collectionItems = null;
   if (isAddress) {
     let url = "https://api.punkscape.xyz/address/" + search + "/punkscapes";
     let result = request("GET", url);
@@ -325,19 +325,19 @@ router.get("/wallet", function (req, res, next) {
       tokenIds.push(element.token_id);
     });
     if (tokenIds.length > 0) {
-      let punksQuery =
-        "SELECT punks.*, " +
+      let collectionItemsQuery =
+        "SELECT collection_items.*, " +
         scoreTable +
-        ".rarity_rank FROM punks INNER JOIN " +
+        ".rarity_rank FROM collection_items INNER JOIN " +
         scoreTable +
-        " ON (punks.id = " +
+        " ON (collection_items.id = " +
         scoreTable +
-        ".punk_id) WHERE punks.id IN (" +
+        ".punk_id) WHERE collection_items.id IN (" +
         tokenIds.join(",") +
         ") ORDER BY " +
         scoreTable +
         ".rarity_rank ASC";
-      punks = db.prepare(punksQuery).all();
+      collectionItems = db.prepare(collectionItemsQuery).all();
     }
   }
 
@@ -350,7 +350,7 @@ router.get("/wallet", function (req, res, next) {
     ogUrl: req.protocol + "://" + req.get("host") + req.originalUrl,
     ogImage: config.main_og_image,
     activeTab: "wallet",
-    punks: punks,
+    collectionItems: collectionItems,
     search: search,
     useTraitNormalization: useTraitNormalization,
     _: _,

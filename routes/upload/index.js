@@ -85,11 +85,11 @@ uploadImage.post("/", async (req, res) => {
 
                 const dbCollectionName = file.split("_config")[0];
 
-                const updatPunkImage = db.prepare(
+                const updateCollectionItemImage = db.prepare(
                   `UPDATE ${dbCollectionName}s SET image = :image WHERE id = :id`
                 );
 
-                updatPunkImage.run({
+                updateCollectionItemImage.run({
                   image: imageUrl,
                   id,
                 });

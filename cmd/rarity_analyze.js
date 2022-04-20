@@ -29,17 +29,17 @@ exports.rarity_analyze = (configFile) => {
 
   const db = new Database(databasePath);
 
-  let totalPunk = 0;
+  let totalCollectionItem = 0;
   let traitTypeId = 0;
   let traitDetailTypeId = 0;
-  let punkTraitTypeId = 0;
-  let punkScoreId = 0;
+  let collectionItemTraitTypeId = 0;
+  let collectionItemScoreId = 0;
 
   let traitTypeIdMap = {};
   let traitTypeCount = {};
   let traitDetailTypeIdMap = {};
   let traitDetailTypeCount = {};
-  let punkTraitTypeCount = {};
+  let collectionItemTraitTypeCount = {};
 
   let ignoreTraits = config.ignore_traits.map((ignore_trait) =>
     ignore_trait.toLowerCase()
@@ -102,7 +102,7 @@ exports.rarity_analyze = (configFile) => {
   let insertCollectionDetails = db.prepare(
     `INSERT INTO ${collection}_details VALUES (?, ?, ?, ?)`
   );
-  let insertPunkStmt = db.prepare(
+  let insertCollectionItemStmt = db.prepare(
     `INSERT INTO ${collection}s VALUES (?, ?, ?, ?, ?, ?)`
   );
   let insertTraitTypeStmt = db.prepare(
@@ -151,7 +151,7 @@ exports.rarity_analyze = (configFile) => {
 
     console.log(`Prepare ${collection}: #` + element.id);
 
-    insertPunkStmt.run(
+    insertCollectionItemStmt.run(
       element.id,
       element.name,
       element.description,
@@ -160,7 +160,7 @@ exports.rarity_analyze = (configFile) => {
       element.animation_url
     );
 
-    let thisPunkTraitTypes = [];
+    let thisCollectionItemTraitTypes = [];
 
     if (_.isEmpty(element.attributes) && !_.isEmpty(element.traits)) {
       element.attributes = [];
@@ -264,26 +264,26 @@ exports.rarity_analyze = (configFile) => {
       }
 
       insertPuntTraitStmt.run(
-        punkTraitTypeId,
+        collectionItemTraitTypeId,
         element.id,
         traitTypeIdMap[attribute.trait_type],
         attribute.value
       );
-      punkTraitTypeId = punkTraitTypeId + 1;
+      collectionItemTraitTypeId = collectionItemTraitTypeId + 1;
 
       if (!ignoreTraits.includes(attribute.trait_type.toLowerCase())) {
-        thisPunkTraitTypes.push(attribute.trait_type);
+        thisCollectionItemTraitTypes.push(attribute.trait_type);
       }
     });
 
-    if (!punkTraitTypeCount.hasOwnProperty(thisPunkTraitTypes.length)) {
-      punkTraitTypeCount[thisPunkTraitTypes.length] = 0 + 1;
+    if (!collectionItemTraitTypeCount.hasOwnProperty(thisCollectionItemTraitTypes.length)) {
+      collectionItemTraitTypeCount[thisCollectionItemTraitTypes.length] = 0 + 1;
     } else {
-      punkTraitTypeCount[thisPunkTraitTypes.length] =
-        punkTraitTypeCount[thisPunkTraitTypes.length] + 1;
+      collectionItemTraitTypeCount[thisCollectionItemTraitTypes.length] =
+        collectionItemTraitTypeCount[thisCollectionItemTraitTypes.length] + 1;
     }
 
-    totalPunk = totalPunk + 1;
+    totalCollectionItem = totalCollectionItem + 1;
     count1 = count1 + 1;
   });
 
@@ -312,17 +312,17 @@ exports.rarity_analyze = (configFile) => {
       id: traitDetailTypeId,
     });
   }
-  console.log(punkTraitTypeCount);
-  let insertPunkTraitContStmt = db.prepare(
+  console.log(collectionItemTraitTypeCount);
+  let insertCollectionItemTraitContStmt = db.prepare(
     `INSERT INTO ${collection}_trait_counts VALUES (?, ?)`
   );
-  for (let countType in punkTraitTypeCount) {
-    let thisTypeCount = punkTraitTypeCount[countType];
-    insertPunkTraitContStmt.run(countType, thisTypeCount);
+  for (let countType in collectionItemTraitTypeCount) {
+    let thisTypeCount = collectionItemTraitTypeCount[countType];
+    insertCollectionItemTraitContStmt.run(countType, thisTypeCount);
   }
 
   let createScoreTableStmt = `CREATE TABLE ${collection}_scores ( id INT, ${collection}_id INT, `;
-  let insertPunkScoreStmt = `INSERT INTO ${collection}_scores VALUES (:id, :${collection}_id, `;
+  let insertCollectionItemScoreStmt = `INSERT INTO ${collection}_scores VALUES (:id, :${collection}_id, `;
 
   for (let i = 0; i < traitTypeId; i++) {
     createScoreTableStmt =
@@ -334,8 +334,8 @@ exports.rarity_analyze = (configFile) => {
       "_rarity DOUBLE, trait_type_" +
       i +
       "_value TEXT, ";
-    insertPunkScoreStmt =
-      insertPunkScoreStmt +
+    insertCollectionItemScoreStmt =
+      insertCollectionItemScoreStmt +
       ":trait_type_" +
       i +
       "_percentile, :trait_type_" +
@@ -348,12 +348,12 @@ exports.rarity_analyze = (configFile) => {
   createScoreTableStmt =
     createScoreTableStmt +
     "trait_count INT,  trait_count_percentile DOUBLE, trait_count_rarity DOUBLE, rarity_sum DOUBLE, rarity_rank INT)";
-  insertPunkScoreStmt =
-    insertPunkScoreStmt +
+  insertCollectionItemScoreStmt =
+    insertCollectionItemScoreStmt +
     ":trait_count,  :trait_count_percentile, :trait_count_rarity, :rarity_sum, :rarity_rank)";
 
   db.exec(createScoreTableStmt);
-  insertPunkScoreStmt = db.prepare(insertPunkScoreStmt);
+  insertCollectionItemScoreStmt = db.prepare(insertCollectionItemScoreStmt);
 
   let count2 = config.collection_id_from;
   collectionData.forEach((element) => {
@@ -366,8 +366,8 @@ exports.rarity_analyze = (configFile) => {
 
     console.log(`Analyze ${collection}: #` + element.id);
 
-    let thisPunkTraitTypes = [];
-    let thisPunkDetailTraits = {};
+    let thisCollectionItemTraitTypes = [];
+    let thisCollectionItemDetailTraits = {};
 
     if (_.isEmpty(element.attributes) && !_.isEmpty(element.traits)) {
       element.attributes = [];
@@ -394,80 +394,80 @@ exports.rarity_analyze = (configFile) => {
         return;
       }
 
-      thisPunkTraitTypes.push(attribute.trait_type);
-      thisPunkDetailTraits[attribute.trait_type] = attribute.value;
+      thisCollectionItemTraitTypes.push(attribute.trait_type);
+      thisCollectionItemDetailTraits[attribute.trait_type] = attribute.value;
     });
 
-    let punkScore = {};
+    let collectionItemScore = {};
     let raritySum = 0;
-    punkScore["id"] = punkScoreId;
-    punkScore[`${collection}_id`] = element.id;
+    collectionItemScore["id"] = collectionItemScoreId;
+    collectionItemScore[`${collection}_id`] = element.id;
     for (let traitType in traitTypeCount) {
-      if (thisPunkTraitTypes.includes(traitType)) {
+      if (thisCollectionItemTraitTypes.includes(traitType)) {
         // has trait
-        let traitDetailType = thisPunkDetailTraits[traitType];
+        let traitDetailType = thisCollectionItemDetailTraits[traitType];
         let thisTraitDetailTypeCount =
           traitDetailTypeCount[traitType + "|||" + traitDetailType];
         let traitTypeId = traitTypeIdMap[traitType];
         if (!ignoreTraits.includes(traitType.toLowerCase())) {
-          punkScore["trait_type_" + traitTypeId + "_percentile"] =
-            thisTraitDetailTypeCount / totalPunk;
-          punkScore["trait_type_" + traitTypeId + "_rarity"] =
-            totalPunk / thisTraitDetailTypeCount;
-          raritySum = raritySum + totalPunk / thisTraitDetailTypeCount;
+          collectionItemScore["trait_type_" + traitTypeId + "_percentile"] =
+            thisTraitDetailTypeCount / totalCollectionItem;
+          collectionItemScore["trait_type_" + traitTypeId + "_rarity"] =
+            totalCollectionItem / thisTraitDetailTypeCount;
+          raritySum = raritySum + totalCollectionItem / thisTraitDetailTypeCount;
         } else {
-          punkScore["trait_type_" + traitTypeId + "_percentile"] = 0;
-          punkScore["trait_type_" + traitTypeId + "_rarity"] = 0;
+          collectionItemScore["trait_type_" + traitTypeId + "_percentile"] = 0;
+          collectionItemScore["trait_type_" + traitTypeId + "_rarity"] = 0;
           raritySum = raritySum + 0;
         }
-        punkScore["trait_type_" + traitTypeId + "_value"] = traitDetailType;
+        collectionItemScore["trait_type_" + traitTypeId + "_value"] = traitDetailType;
       } else {
         // missing trait
         let thisTraitTypeCount = traitTypeCount[traitType];
         let traitTypeId = traitTypeIdMap[traitType];
         if (!ignoreTraits.includes(traitType.toLowerCase())) {
-          punkScore["trait_type_" + traitTypeId + "_percentile"] =
-            (totalPunk - thisTraitTypeCount) / totalPunk;
-          punkScore["trait_type_" + traitTypeId + "_rarity"] =
-            totalPunk / (totalPunk - thisTraitTypeCount);
-          raritySum = raritySum + totalPunk / (totalPunk - thisTraitTypeCount);
+          collectionItemScore["trait_type_" + traitTypeId + "_percentile"] =
+            (totalCollectionItem - thisTraitTypeCount) / totalCollectionItem;
+          collectionItemScore["trait_type_" + traitTypeId + "_rarity"] =
+            totalCollectionItem / (totalCollectionItem - thisTraitTypeCount);
+          raritySum = raritySum + totalCollectionItem / (totalCollectionItem - thisTraitTypeCount);
         } else {
-          punkScore["trait_type_" + traitTypeId + "_percentile"] = 0;
-          punkScore["trait_type_" + traitTypeId + "_rarity"] = 0;
+          collectionItemScore["trait_type_" + traitTypeId + "_percentile"] = 0;
+          collectionItemScore["trait_type_" + traitTypeId + "_rarity"] = 0;
           raritySum = raritySum + 0;
         }
-        punkScore["trait_type_" + traitTypeId + "_value"] = "None";
+        collectionItemScore["trait_type_" + traitTypeId + "_value"] = "None";
       }
     }
 
-    thisPunkTraitTypes = thisPunkTraitTypes.filter(
-      (thisPunkTraitType) => !ignoreTraits.includes(thisPunkTraitType)
+    thisCollectionItemTraitTypes = thisCollectionItemTraitTypes.filter(
+      (thisCollectionItemTraitType) => !ignoreTraits.includes(thisCollectionItemTraitType)
     );
-    let thisPunkTraitTypeCount = thisPunkTraitTypes.length;
+    let thisCollectionItemTraitTypeCount = thisCollectionItemTraitTypes.length;
 
-    punkScore["trait_count"] = thisPunkTraitTypeCount;
-    punkScore["trait_count_percentile"] =
-      punkTraitTypeCount[thisPunkTraitTypeCount] / totalPunk;
-    punkScore["trait_count_rarity"] =
-      totalPunk / punkTraitTypeCount[thisPunkTraitTypeCount];
+    collectionItemScore["trait_count"] = thisCollectionItemTraitTypeCount;
+    collectionItemScore["trait_count_percentile"] =
+      collectionItemTraitTypeCount[thisCollectionItemTraitTypeCount] / totalCollectionItem;
+    collectionItemScore["trait_count_rarity"] =
+      totalCollectionItem / collectionItemTraitTypeCount[thisCollectionItemTraitTypeCount];
     raritySum =
-      raritySum + totalPunk / punkTraitTypeCount[thisPunkTraitTypeCount];
-    punkScore["rarity_sum"] = raritySum;
-    punkScore["rarity_rank"] = 0;
+      raritySum + totalCollectionItem / collectionItemTraitTypeCount[thisCollectionItemTraitTypeCount];
+    collectionItemScore["rarity_sum"] = raritySum;
+    collectionItemScore["rarity_rank"] = 0;
 
-    insertPunkScoreStmt.run(punkScore);
+    insertCollectionItemScoreStmt.run(collectionItemScore);
 
-    punkScoreId = punkScoreId + 1;
+    collectionItemScoreId = collectionItemScoreId + 1;
     count2 = count2 + 1;
   });
 
-  const punkScoreStmt = db.prepare(
+  const collectionItemScoreStmt = db.prepare(
     `SELECT rarity_sum FROM ${collection}_scores WHERE ${collection}_id = ?`
   );
-  const punkRankStmt = db.prepare(
+  const collectionItemRankStmt = db.prepare(
     `SELECT COUNT(id) as higherRank FROM ${collection}_scores WHERE rarity_sum > ?`
   );
-  let updatPunkRankStmt = db.prepare(
+  let updatCollectionItemRankStmt = db.prepare(
     `UPDATE ${collection}_scores SET rarity_rank = :rarity_rank WHERE ${collection}_id = :${collection}_id`
   );
 
@@ -481,10 +481,10 @@ exports.rarity_analyze = (configFile) => {
     }
 
     console.log(`Ranking ${collection}: #` + element.id);
-    let punkScore = punkScoreStmt.get(element.id);
-    let punkRank = punkRankStmt.get(punkScore.rarity_sum);
-    updatPunkRankStmt.run({
-      rarity_rank: punkRank.higherRank + 1,
+    let collectionItemScore = collectionItemScoreStmt.get(element.id);
+    let collectionItemRank = collectionItemRankStmt.get(collectionItemScore.rarity_sum);
+    updatCollectionItemRankStmt.run({
+      rarity_rank: collectionItemRank.higherRank + 1,
       [`${collection}_id`]: element.id,
     });
     count3 = count3 + 1;

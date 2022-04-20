@@ -21,16 +21,16 @@ const logger = fs.createWriteStream(outputPath, {
 
 logger.write("[\n");
 
-let totalPunkCount = db.prepare('SELECT COUNT(id) as punk_total FROM punks').get().punk_total;
-let punks = db.prepare('SELECT punks.* FROM punks ORDER BY id').all();
+let totalPunkCount = db.prepare('SELECT COUNT(id) as collection_item_total FROM collection_items').get().collectionItem_total;
+let collectionItems = db.prepare('SELECT collection_items.* FROM collection_items ORDER BY id').all();
 
 let count = 0;
-punks.forEach(punk => {
-    console.log("Process punk: #" + punk.id);
+collectionItems.forEach(collectionItem => {
+    console.log("Process collectionItem: #" + collectionItem.id);
     if ((count+1) == totalPunkCount) {
-        logger.write(JSON.stringify(jsondata.punk(punk))+"\n");
+        logger.write(JSON.stringify(jsondata.collectionItem(collectionItem))+"\n");
     } else {
-        logger.write(JSON.stringify(jsondata.punk(punk))+",\n");
+        logger.write(JSON.stringify(jsondata.collectionItem(collectionItem))+",\n");
     }
     count++
 });

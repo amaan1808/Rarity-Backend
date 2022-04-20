@@ -12,34 +12,34 @@ if (!fs.existsSync(databasePath)) {
 
 const db = new Database(databasePath);
 
-exports.punk = function (punk, scoreTable,collection) {
-  let punkId = punk.id;
+exports.collectionItem = function (collectionItem, scoreTable,collection) {
+  let collectionItemId = collectionItem.id;
   console.log(
     `SELECT ${collection}_traits.trait_type_id, trait_types.trait_type, ${collection}_traits.value  FROM ${collection}_traits`
   );
-  let punkTraits = db.prepare(`SELECT ${collection}_traits.trait_type_id, trait_types.trait_type, ${collection}_traits.value FROM ${collection}_traits INNER JOIN trait_types ON (${collection}_traits.trait_type_id = trait_types.id) WHERE ${collection}_traits.${collection}_id = ?`).all(punkId);
-  let punkScore = db.prepare('SELECT '+scoreTable+'.* FROM '+scoreTable+' WHERE '+scoreTable+`.${collection}_id = ?`).get(punkId);
+  let collectionItemTraits = db.prepare(`SELECT ${collection}_traits.trait_type_id, trait_types.trait_type, ${collection}_traits.value FROM ${collection}_traits INNER JOIN trait_types ON (${collection}_traits.trait_type_id = trait_types.id) WHERE ${collection}_traits.${collection}_id = ?`).all(collectionItemId);
+  let collectionItemScore = db.prepare('SELECT '+scoreTable+'.* FROM '+scoreTable+' WHERE '+scoreTable+`.${collection}_id = ?`).get(collectionItemId);
   let allTraitTypes = db.prepare('SELECT trait_types.* FROM trait_types').all();
   
-  let punkTraitsData = [];
-  let punkTraitIDs = [];
-  punkTraits.forEach(punkTrait => {
-    let percentile = punkScore['trait_type_'+punkTrait.trait_type_id+'_percentile'];
-    let rarity_score = punkScore['trait_type_'+punkTrait.trait_type_id+'_rarity'];
-    punkTraitsData.push({
-      trait_type: punkTrait.trait_type,
-      value: punkTrait.value,
+  let collectionItemTraitsData = [];
+  let collectionItemTraitIDs = [];
+  collectionItemTraits.forEach(collectionItemTrait => {
+    let percentile = collectionItemScore['trait_type_'+collectionItemTrait.trait_type_id+'_percentile'];
+    let rarity_score = collectionItemScore['trait_type_'+collectionItemTrait.trait_type_id+'_rarity'];
+    collectionItemTraitsData.push({
+      trait_type: collectionItemTrait.trait_type,
+      value: collectionItemTrait.value,
       percentile: percentile,
       rarity_score: rarity_score,
     });
-    punkTraitIDs.push(punkTrait.trait_type_id);
+    collectionItemTraitIDs.push(collectionItemTrait.trait_type_id);
   });
 
   let missingTraitsData = [];
   allTraitTypes.forEach(traitType => {
-    if (!punkTraitIDs.includes(traitType.id)) {
-      let percentile = punkScore['trait_type_'+traitType.id+'_percentile'];
-      let rarity_score = punkScore['trait_type_'+traitType.id+'_rarity'];
+    if (!collectionItemTraitIDs.includes(traitType.id)) {
+      let percentile = collectionItemScore['trait_type_'+traitType.id+'_percentile'];
+      let rarity_score = collectionItemScore['trait_type_'+traitType.id+'_rarity'];
       missingTraitsData.push({
         trait_type: traitType.trait_type,
         percentile: percentile,
@@ -49,17 +49,17 @@ exports.punk = function (punk, scoreTable,collection) {
   });
 
   return {
-    id: punk.id,
-    name: punk.name,
-    image: punk.image,
-    attributes: punkTraitsData,
+    id: collectionItem.id,
+    name: collectionItem.name,
+    image: collectionItem.image,
+    attributes: collectionItemTraitsData,
     missing_traits: missingTraitsData,
     trait_count: {
-      count: punkScore.trait_count,
-      percentile: punkScore.trait_count_percentile,
-      rarity_score: punkScore.trait_count_rarity
+      count: collectionItemScore.trait_count,
+      percentile: collectionItemScore.trait_count_percentile,
+      rarity_score: collectionItemScore.trait_count_rarity
     },
-    rarity_score: punkScore.rarity_sum,
-    rarity_rank: punkScore.rarity_rank
+    rarity_score: collectionItemScore.rarity_sum,
+    rarity_rank: collectionItemScore.rarity_rank
   };
 };
