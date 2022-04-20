@@ -32,7 +32,22 @@ uploadImage.post("/", async (req, res) => {
       });
     }
     const s3Client = s3.s3Client;
-    const params = s3.uploadParams;
+
+    const { id, collection_name } = req.body;
+    const collection_name_lowercase = collection_name.toLowerCase();
+
+    if (!(id && collection_name)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter id and collection name",
+      });
+    }
+
+    const params = {
+      Bucket: `rarity-assets/${collection_name_lowercase}`,
+      Key: "", // pass key
+      Body: null, // pass file body
+    };
 
     params.Key = req?.file?.originalname;
 
@@ -47,59 +62,52 @@ uploadImage.post("/", async (req, res) => {
       const imageUrl = data.Location;
 
       if (imageUrl) {
-        const { id, collection_name } = req.body;
-        const collection_name_lowercase = collection_name.toLowerCase();
+        let config;
 
-        if (id && collection_name) {
-          let config;
+        try {
+          fs.readdirSync(appRoot + "/config/").forEach((file) => {
+            if (file.endsWith(".js")) {
+              config = require(appRoot + "/config/" + file);
 
-          try {
-            fs.readdirSync(appRoot + "/config/").forEach((file) => {
-              if (file.endsWith(".js")) {
-                config = require(appRoot + "/config/" + file);
+              if (
+                config?.collection_name?.toLowerCase() ===
+                collection_name_lowercase
+              ) {
+                const databasePath =
+                  appRoot + "/config/" + config.sqlite_file_name;
 
-                if (
-                  config?.collection_name?.toLowerCase() ===
-                  collection_name_lowercase
-                ) {
-                  const databasePath =
-                    appRoot + "/config/" + config.sqlite_file_name;
-
-                  if (!fs.existsSync(databasePath)) {
-                    console.log("Database not exist.");
-                    return;
-                  }
-
-                  const db = new Database(databasePath);
-
-                  const updatPunkImage = db.prepare(
-                    `UPDATE ${collection_name_lowercase}s SET image = :image WHERE id = :id`
-                  );
-
-                  updatPunkImage.run({
-                    image: imageUrl,
-                    id,
-                  });
+                if (!fs.existsSync(databasePath)) {
+                  console.log("Database not exist.");
+                  return;
                 }
-              }
-            });
-          } catch (err) {
-            console.log(err);
-            return res.status(400).json({
-              success: false,
-              message: "Id or Collection name invalid",
-            });
-          }
 
-          return res.status(200).json({
-            success: true,
-            message: "File Uploaded",
-            imageUrl,
+                const db = new Database(databasePath);
+
+                const dbCollectionName = file.split("_config")[0];
+
+                const updatPunkImage = db.prepare(
+                  `UPDATE ${dbCollectionName}s SET image = :image WHERE id = :id`
+                );
+
+                updatPunkImage.run({
+                  image: imageUrl,
+                  id,
+                });
+              }
+            }
+          });
+        } catch (err) {
+          console.log(err);
+          return res.status(400).json({
+            success: false,
+            message: "Id or Collection name invalid",
           });
         }
-        return res.status(400).json({
-          success: false,
-          message: "Please enter id and collection name",
+
+        return res.status(200).json({
+          success: true,
+          message: "File Uploaded",
+          imageUrl,
         });
       }
       return res.status(400).json({

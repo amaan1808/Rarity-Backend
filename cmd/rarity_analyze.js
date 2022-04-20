@@ -60,7 +60,8 @@ exports.rarity_analyze = (configFile) => {
     `CREATE TABLE ${collection}_details (` +
       "collection_image TEXT, " +
       "discord TEXT, " +
-      "twitter TEXT " +
+      "twitter TEXT, " +
+      "website TEXT " +
       ")"
   );
 
@@ -99,7 +100,7 @@ exports.rarity_analyze = (configFile) => {
   );
 
   let insertCollectionDetails = db.prepare(
-    `INSERT INTO ${collection}_details VALUES (?, ?, ?)`
+    `INSERT INTO ${collection}_details VALUES (?, ?, ?, ?)`
   );
   let insertPunkStmt = db.prepare(
     `INSERT INTO ${collection}s VALUES (?, ?, ?, ?, ?, ?)`
@@ -117,7 +118,8 @@ exports.rarity_analyze = (configFile) => {
   insertCollectionDetails.run(
     config.collection_image || "",
     config.discord || "",
-    config.twitter || ""
+    config.twitter || "",
+    config.website || ""
   );
 
   let count1 = config.collection_id_from;

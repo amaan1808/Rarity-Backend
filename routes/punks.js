@@ -11,12 +11,14 @@ const MarkdownIt = require("markdown-it"),
 
 /* GET punks listing. */
 router.get("/:id", function (req, res, next) {
-  const collection = req.originalUrl.replace(`/${req.params.id}`, "").slice(5);
+  const collection = req.originalUrl
+    .split("?")[0]
+    .replace(`/${req.params.id}`, "")
+    .slice(5);
   let punkId = req.params.id;
   const config = require(appRoot + `/config/${collection}_config.js`);
   // config = config1;
-  let useTraitNormalization = req.query.trait_normalization;
-
+  let useTraitNormalization = req?.query?.trait_normalization;
   let databasePath = appRoot + "/config/" + config.sqlite_file_name;
   console.log(databasePath);
 

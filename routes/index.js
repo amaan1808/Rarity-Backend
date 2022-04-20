@@ -223,6 +223,7 @@ router.get("/:collectionName", function (req, res, next) {
           discord: "",
           twitter: "",
           collection_image: "",
+          website: "",
         },
     ogTitle: config.collection_name + " | " + config.app_name,
     ogDescription:
@@ -381,6 +382,11 @@ router.get("/", (req, res, next) => {
     if (collectionDetails?.length) {
       body.details = collectionDetails[0];
     }
+
+    console.log(file, "file");
+    const config = require(appRoot + `/config/${file}_config.js`);
+
+    body.name = config.collection_name;
 
     collection.push(body);
   });
