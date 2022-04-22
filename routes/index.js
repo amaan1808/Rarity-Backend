@@ -33,7 +33,7 @@ router.get("/:collectionName", function (req, res, next) {
   } catch (err) {}
 
   let search = req.query.search;
-  let traits = req.query.traits;
+  let traits = decodeURIComponent(req.query.traits);
   let useTraitNormalization = req.query.trait_normalization;
   let orderBy = req.query.order_by;
   let page = req.query.page;
